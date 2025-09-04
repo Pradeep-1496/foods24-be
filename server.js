@@ -12,7 +12,7 @@ connectDB();
 
 // Routes
 app.get("/", (req, res) => {
-  res.send("Welcome");
+  res.send("<center><h2>  Welcome to backend  </h2></center>");
 });
 
 app.use("/auth/user", require("./routes/auth.user"));

@@ -5,8 +5,18 @@ require("dotenv").config();
 const app = express();
 app.use(express.json());
 
-// DB Connection
-// mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/foodapp');
+// ✅ CORS setup
+app.use(
+  cors({
+    origin: "*", // allow all origins (for dev)
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
+//                                          DB Connection
+
+// mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/foodapp');      //For Local(Mongo compass)
 const connectDB = require("./config/db");
 connectDB();
 

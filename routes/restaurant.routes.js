@@ -11,8 +11,8 @@ const router = express.Router();
 router.get("/", async (req, res) => {
   try {
     const restaurants = await Restaurant.find()
-      .populate("menu")      // fetch menu object
-      .populate("tables");   // fetch tables if needed
+      .populate("menu") // fetch menu object
+      .populate("tables"); // fetch tables if needed
 
     res.json(restaurants); // ✅ return array
   } catch (err) {

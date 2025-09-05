@@ -1,17 +1,22 @@
 const express = require("express");
 const Restaurant = require("../models/Restaurant");
+const Menu = require("../models/Menu");
 const router = express.Router();
 
-// Get all restaurants with details
-router.get("/restaurants", async (req, res) => {
+// Get restaurant by ID with menu
+router.get("/:id", async (req, res) => {
   try {
-    const restaurants = await Restaurant.find()
-      .populate("menu")  // if you want to fetch menu details too
-      .populate("tables"); // if you want to show table info
+    const restaurant = await Restaurant.findById(req.params.id)
+      .populate("menu") // get menu
+      .populate("tables"); // optional if you want tables too
 
-    res.json(restaurants);
+    if (!restaurant) {
+      return res.status(404).json({ error: "Restaurant not found" });
+    }
+
+    res.json(restaurant);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch restaurants" });
+    res.status(500).json({ error: "Server error" });
   }
 });
 

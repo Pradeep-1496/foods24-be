@@ -1,27 +1,17 @@
-const express = require('express');
+const express = require("express");
+const Restaurant = require("../models/Restaurant");
 const router = express.Router();
 
-// ✅ Import Restaurant model
-const Restaurant = require('../models/Restaurant');
-
-// ✅ Import referenced models so populate() works!
-require('../models/Table');
-require('../models/Menu');
-
-// ✅ GET restaurant with full menu and tables
-router.get('/:id', async (req, res) => {
+// Get all restaurants with details
+router.get("/restaurants", async (req, res) => {
   try {
-    const restaurant = await Restaurant.findById(req.params.id)
-      .populate('tables')
-      .populate('menu');
+    const restaurants = await Restaurant.find()
+      .populate("menu")  // if you want to fetch menu details too
+      .populate("tables"); // if you want to show table info
 
-    if (!restaurant) {
-      return res.status(404).json({ error: 'Restaurant not found' });
-    }
-
-    res.json({ success: true, data: restaurant });
+    res.json(restaurants);
   } catch (err) {
-    res.status(500).json({ error: 'Server error', details: err.message });
+    res.status(500).json({ error: "Failed to fetch restaurants" });
   }
 });
 

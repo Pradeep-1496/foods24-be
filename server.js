@@ -21,9 +21,9 @@ app.use(
 const connectDB = require("./config/db");
 connectDB();
 
-// Routes
+//  Routes
 app.get("/", (req, res) => {
-  res.send("<center><h2>  Welcome to backend  </h2></center>");
+  res.send("<center><h2>  Welcome to Foods24 Backend  </h2></center>");
 });
 
 app.use("/auth/user", require("./routes/auth.user"));
@@ -33,6 +33,10 @@ app.use("/auth/restaurant", require("./routes/auth.restaurant"));
 // add menu by restaurant
 app.use("/restaurant", require("./routes/menu.restaurant"));
 app.use("/restaurant", require("./routes/restaurant.routes"));
+
+// List All Restaurant without login also
+const restaurantRoutes = require("./routes/restaurant.routes");
+app.use("/api", restaurantRoutes);
 
 // user order
 app.use("/", require("./routes/order.routes"));

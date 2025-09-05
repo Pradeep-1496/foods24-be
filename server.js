@@ -36,7 +36,7 @@ app.use("/restaurant", require("./routes/restaurant.routes"));
 
 // List All Restaurant without login also
 const restaurantRoutes = require("./routes/restaurant.routes");
-app.use("/api", restaurantRoutes);
+app.use("/api/restaurants", require("./routes/restaurant.routes"));
 
 // user order
 app.use("/", require("./routes/order.routes"));

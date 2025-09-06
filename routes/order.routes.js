@@ -1,58 +1,75 @@
 const express = require("express");
 const router = express.Router();
+const authRole = require("../middleware/authRole");
 const Order = require("../models/Order");
-const MenuItem = require('../models/MenuItem');
 const Restaurant = require("../models/Restaurant");
+const MenuItem = require("../models/MenuItem");
 
-// POST /order/place
-router.post("/order/place", async (req, res) => {
+// ✅ User places order
+router.post("/", authRole("user"), async (req, res) => {
   try {
     const { restaurantId, items } = req.body;
 
     const restaurant = await Restaurant.findById(restaurantId);
-    if (!restaurant)
-      return res.status(404).json({ error: "Restaurant not found" });
+    if (!restaurant) return res.status(404).json({ error: "Restaurant not found" });
 
     let totalAmount = 0;
     const orderItems = [];
 
-    for (const entry of items) {
-      const menuItem = await MenuItem.findById(entry.itemId);
-      if (!menuItem)
-        return res
-          .status(404)
-          .json({ error: `Item ${entry.itemId} not found` });
+    for (const { itemId, quantity } of items) {
+      const menuItem = await MenuItem.findById(itemId);
+      if (!menuItem) return res.status(404).json({ error: `Item ${itemId} not found` });
 
-      totalAmount += menuItem.price * entry.quantity;
-      orderItems.push({
-        item: menuItem._id,
-        quantity: entry.quantity,
-      });
+      totalAmount += menuItem.price * quantity;
+      orderItems.push({ item: menuItem._id, quantity });
     }
 
-    const order = new Order({
-      restaurant: restaurant._id,
+    const order = await Order.create({
       user: req.user.id,
+      restaurant: restaurant._id,
       items: orderItems,
       totalAmount,
     });
 
-    await order.save();
+    restaurant.r_orders.push(order._id);
+    await restaurant.save();
 
-    res.json({ message: "Order placed successfully", order });
+    res.json(await order.populate("items.item", "name price"));
   } catch (err) {
     res.status(500).json({ error: "Server error", details: err.message });
   }
 });
 
-// GET /restaurant/:id/orders – Restaurant can see their orders
-router.get("/restaurant/:id/orders", async (req, res) => {
+// ✅ Restaurant fetches its orders
+router.get("/restaurant", authRole("restaurant"), async (req, res) => {
   try {
-    const orders = await Order.find({ restaurant: req.params.id })
+    const orders = await Order.find({ restaurant: req.user.id })
       .populate("user", "name email")
       .populate("items.item", "name price");
 
     res.json(orders);
+  } catch (err) {
+    res.status(500).json({ error: "Server error", details: err.message });
+  }
+});
+
+// ✅ Restaurant updates status
+router.put("/:id/status", authRole("restaurant"), async (req, res) => {
+  try {
+    const { status } = req.body;
+    if (!["pending", "ongoing", "completed"].includes(status)) {
+      return res.status(400).json({ error: "Invalid status" });
+    }
+
+    const order = await Order.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    ).populate("items.item", "name price");
+
+    if (!order) return res.status(404).json({ error: "Order not found" });
+
+    res.json({ message: "Order status updated", order });
   } catch (err) {
     res.status(500).json({ error: "Server error", details: err.message });
   }

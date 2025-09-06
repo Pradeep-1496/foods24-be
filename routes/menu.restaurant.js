@@ -1,21 +1,21 @@
 const express = require("express");
 const router = express.Router();
+const authRole = require("../middleware/authRole");
 const Restaurant = require("../models/Restaurant");
 const Menu = require("../models/Menu");
 const MenuItem = require("../models/MenuItem");
-const authRole = require("../middleware/authRole");
 
-// ----------------- GET MENU -----------------
-// GET /restaurant/menu
+// ✅ Get Menu with items
 router.get("/menu", authRole("restaurant"), async (req, res) => {
   try {
     const restaurant = await Restaurant.findById(req.user.id).populate({
       path: "menu",
-      populate: { path: "items", model: "MenuItem" },
+      populate: { path: "items" },
     });
 
-    if (!restaurant) return res.status(404).json({ error: "Restaurant not found" });
-    if (!restaurant.menu) return res.status(404).json({ error: "Menu not found" });
+    if (!restaurant || !restaurant.menu) {
+      return res.json({ items: [] });
+    }
 
     res.json(restaurant.menu);
   } catch (err) {
@@ -23,8 +23,7 @@ router.get("/menu", authRole("restaurant"), async (req, res) => {
   }
 });
 
-// ----------------- ADD ITEM -----------------
-// POST /restaurant/menu/item
+// ✅ Add item
 router.post("/menu/item", authRole("restaurant"), async (req, res) => {
   try {
     const { name, price, description } = req.body;
@@ -32,7 +31,6 @@ router.post("/menu/item", authRole("restaurant"), async (req, res) => {
 
     if (!restaurant) return res.status(404).json({ error: "Restaurant not found" });
 
-    // Create menu if not exists
     let menu;
     if (!restaurant.menu) {
       menu = await Menu.create({ items: [] });
@@ -42,29 +40,22 @@ router.post("/menu/item", authRole("restaurant"), async (req, res) => {
       menu = await Menu.findById(restaurant.menu._id);
     }
 
-    // Create new item
     const item = await MenuItem.create({ name, price, description });
-
-    // Push into menu.items
     menu.items.push(item._id);
     await menu.save();
 
-    res.json({ message: "Item added successfully", item });
+    res.json({ message: "Item added", item });
   } catch (err) {
     res.status(500).json({ error: "Server error", details: err.message });
   }
 });
 
-
-// ----------------- UPDATE ITEM -----------------
-// PUT /restaurant/menu/item/:id
+// ✅ Update item
 router.put("/menu/item/:id", authRole("restaurant"), async (req, res) => {
   try {
     const { name, price, description } = req.body;
-    const itemId = req.params.id;
-
     const updatedItem = await MenuItem.findByIdAndUpdate(
-      itemId,
+      req.params.id,
       { name, price, description },
       { new: true }
     );
@@ -77,21 +68,23 @@ router.put("/menu/item/:id", authRole("restaurant"), async (req, res) => {
   }
 });
 
-// ----------------- DELETE ITEM -----------------
-// DELETE /restaurant/menu/item/:id
+// ✅ Delete item
 router.delete("/menu/item/:id", authRole("restaurant"), async (req, res) => {
   try {
     const itemId = req.params.id;
-    const restaurant = await Restaurant.findById(req.user.id).populate("menu");
 
-    if (restaurant.menu) {
-      await Menu.findByIdAndUpdate(restaurant.menu._id, { $pull: { items: itemId } });
-    }
+    // Remove from Menu collection
+    await Menu.updateOne(
+      { items: itemId },
+      { $pull: { items: itemId } }
+    );
 
-    const deletedItem = await MenuItem.findByIdAndDelete(itemId);
-    if (!deletedItem) return res.status(404).json({ error: "Item not found" });
+    // Delete the item
+    const deleted = await MenuItem.findByIdAndDelete(itemId);
 
-    res.json({ message: "Item deleted", item: deletedItem });
+    if (!deleted) return res.status(404).json({ error: "Item not found" });
+
+    res.json({ message: "Item deleted" });
   } catch (err) {
     res.status(500).json({ error: "Server error", details: err.message });
   }

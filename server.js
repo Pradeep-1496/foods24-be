@@ -34,18 +34,20 @@ app.use("/auth/restaurant", require("./routes/auth.restaurant"));
 app.use("/restaurant", require("./routes/dashboard.restaurant"));  //dashboard infomation 
 app.use("/restaurant", require("./routes/menu.restaurant"));
 app.use("/restaurant", require("./routes/restaurant.routes"));     //auth route
+app.use("/restaurant", require("./routes/table.routes"));
+
 
 // List All Restaurant without login also
-const restaurantRoutes = require("./routes/restaurant.routes");
+
 app.use("/api/restaurants", require("./routes/restaurant.routes"));
 
 // restaurant menu 
-const menuRestaurantRoutes = require("./routes/menu.restaurant");
-app.use("/api/restaurant", menuRestaurantRoutes);
+// const menuRestaurantRoutes = require("./routes/menu.restaurant");
+// app.use("/api/restaurant", menuRestaurantRoutes);
 
 
 // user order
-app.use("/", require("./routes/order.routes"));
+app.use("/order", require("./routes/order.routes"));
 
 // add tables by restaurant
 app.use("/restaurant", require("./routes/table.routes"));

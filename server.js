@@ -41,9 +41,11 @@ app.use("/restaurant", require("./routes/table.routes"));
 
 app.use("/api/restaurants", require("./routes/restaurant.routes"));
 
-// restaurant menu 
-// const menuRestaurantRoutes = require("./routes/menu.restaurant");
-// app.use("/api/restaurant", menuRestaurantRoutes);
+// restaurant profile CRUD
+app.use("/restaurant", require("./routes/restaurant.profile"));
+app.use("/uploads", express.static("uploads")); // serve images
+
+
 
 
 // user order

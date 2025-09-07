@@ -8,6 +8,7 @@ const JWT_SECRET = process.env.JWT_SECRET || "myjwtsecret";
 
 // Restaurant Register
 
+
 router.post("/register", async (req, res) => {
   const { email, password, r_name, location, phone } = req.body;
 
@@ -20,10 +21,14 @@ router.post("/register", async (req, res) => {
     }
 
     const existing = await Restaurant.findOne({ email });
-    if (existing)
+    if (existing) {
       return res.status(400).json({ error: "Email already registered" });
+    }
 
+    // 2. Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
+
+    // 3. Save restaurant
     const restaurant = await Restaurant.create({
       email,
       password: hashedPassword,
@@ -32,12 +37,33 @@ router.post("/register", async (req, res) => {
       phone,
     });
 
-    res.status(201).json({ message: "Restaurant registered successfully" });
+    // 4. Generate JWT token
+    const token = jwt.sign(
+      { id: restaurant._id, email: restaurant.email }, // payload
+      process.env.JWT_SECRET || "mysecret",           // secret key
+      { expiresIn: "7d" }                             // token expiry
+    );
+
+    // 5. Send response with token + restaurant info
+    res.status(201).json({
+      message: "Restaurant registered successfully",
+      token,
+      restaurant: {
+        id: restaurant._id,
+        r_name: restaurant.r_name,
+        email: restaurant.email,
+        location: restaurant.location,
+        phone: restaurant.phone,
+      },
+    });
   } catch (err) {
-  console.error(err); // This is the key step
-  res.status(500).json({ error: "Server error", details: err.message });
-}
+    console.error(err);
+    res.status(500).json({ error: "Server error", details: err.message });
+  }
 });
+
+
+
 
 // Restaurant Login
 router.post("/login", async (req, res) => {

@@ -21,6 +21,7 @@ const upload = multer({ storage });
 router.get("/profile", authRole("restaurant"), async (req, res) => {
   try {
     const restaurant = await Restaurant.findById(req.user.id).select("-password");
+    if (!restaurant) return res.status(404).json({ error: "Restaurant not found" });
     res.json(restaurant);
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch profile" });
